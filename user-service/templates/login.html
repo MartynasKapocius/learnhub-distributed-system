@@ -1,0 +1,27 @@
+{% extends "layout.html" %} {% block title %}Login{% endblock %} {% block
+content %}
+
+<div class="container">
+  <h2>Login</h2>
+
+  <form id="loginForm">
+    <label>Email</label>
+    <input type="email" id="loginEmail" required />
+
+    <label>Password</label>
+    <input type="password" id="loginPassword" required />
+    <div class="text-center">
+      <button type="submit">Log In</button>
+    </div>
+    <div id="loginResult" class="result"></div>
+  </form>
+
+  <p class="note">
+    Don't have an account?
+    <a href="/register">Register here</a>
+  </p>
+</div>
+
+<script src="/static/js/auth.js"></script>
+
+{% endblock %}

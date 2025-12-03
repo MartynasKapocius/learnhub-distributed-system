@@ -1,0 +1,35 @@
+{% extends "layout.html" %} {% block title %}Account{% endblock %} {% block
+content %}
+<div class="container">
+  <h2>Account</h2>
+  <div class="account">
+    <!-- TAB BUTTONS -->
+    <div class="tabs">
+      <button class="tab-button active" data-tab="profile">Profile</button>
+      <button class="tab-button" data-tab="subscription">Subscription</button>
+    </div>
+
+    <!-- TAB CONTENT -->
+    <div class="tab-content">
+      <!-- PROFILE TAB -->
+      <div id="profile" class="tab-panel active">
+        <h3>Your Profile</h3>
+
+        <p><strong>Name:</strong> <span id="profileName">Loading...</span></p>
+        <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+      </div>
+
+      <!-- SUBSCRIPTION TAB -->
+      <div id="subscription" class="tab-panel">
+        <h3>Your Subscription</h3>
+
+        <div id="subscriptionContent" class="subscriptionContent">
+          <!-- SUBSCRIPTION data-->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/account.js"></script>
+{% endblock %}

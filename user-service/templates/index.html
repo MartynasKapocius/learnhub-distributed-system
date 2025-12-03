@@ -1,0 +1,38 @@
+{% extends "layout.html" %} {% block title %}LearnHub{% endblock %} {% block
+content %}
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>Master Future Skills, Starting Here.</h1>
+    <p>
+      Hundreds of popular courses, flexible subscription plans, elevate your
+      professional skills anytime, anywhere.
+    </p>
+    <a href="#" class="cta-button primary large">Start Your Free Trial Now</a>
+  </div>
+</section>
+
+<section class="section featured-courses">
+  <h2>Recommended Courses</h2>
+  <div class="course-grid">
+    {% for course in courses %}
+    <div class="course-card">
+      <h3>{{ course.title }}</h3>
+      <p>{{ course.desc }}</p>
+      <a href="#" class="cta-button secondary">View Details</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section subscription-cta">
+  <div class="container">
+    <h2>Unlimited Learning, One Subscription.</h2>
+    <p>Unlock all courses, exclusive member content, and mentor Q&A.</p>
+    <a href="#" class="cta-button primary large">Explore Subscription Plans</a>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+{% endblock %}
