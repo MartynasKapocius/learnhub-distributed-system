@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  user-service:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/learnhub_dev
+      - JWT_SECRET_KEY=default-dev-secret
+    depends_on:
+      - mongo
+
+  quiz-service:
+    build: ./quiz-service
+    ports:
+      - "5002:5002"
+    environment:
+      - DATABASE_URL=sqlite:///quiz_service.db
+      - JWT_SECRET_KEY=default-dev-secret
+      - COURSE_SERVICE_URL=http://user-service:5000
+
+  mongo:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
