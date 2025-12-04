@@ -25,7 +25,7 @@ main {
 }
 
 nav a {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 nav a:hover {
@@ -64,6 +64,8 @@ img {
 
 .auth {
     gap: 1em;
+    align-items: center;
+    font-size: 18px;
 }
 
 @media (max-width: 768px) {
@@ -100,6 +102,10 @@ input {
     margin-top: 8px;
     border-radius: 6px;
     border: 1px solid #ccc;
+}
+
+a {
+    cursor: pointer;
 }
 
 button {
@@ -304,19 +310,6 @@ button:hover {
     .header {
         flex-direction: column;
         padding: 15px 20px;
-    }
-
-    nav {
-        margin-top: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    nav a,
-    .cta-button {
-        /* Adjust spacing for mobile nav */
-        margin: 5px 0;
     }
 
     .hero {

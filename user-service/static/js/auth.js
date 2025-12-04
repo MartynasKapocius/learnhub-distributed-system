@@ -1,6 +1,32 @@
 // REGISTER + LOGIN
+// Ensure the script runs after the entire HTML document is loaded
 document.addEventListener("DOMContentLoaded", () => {
   const API_BASE = "/api"
+  // NOTE: TOKEN_STORAGE_KEY constant is removed as we are now using HTTP-Only Cookies.
+
+  // Helper function to handle successful authentication
+  const handleAuthSuccess = (data, resultBox) => {
+    // 1. The token is now stored in an HTTP-Only Cookie by the backend response.
+    //    We only check for a success message/status.
+
+    resultBox.textContent =
+      data.message || "Operation successful! Logging in..."
+    resultBox.style.color = "green"
+
+    // 2. Redirect to the account page after a short delay
+    setTimeout(() => {
+      window.location.href = "/account"
+    }, 300)
+    // NOTE: No localStorage operations are needed here.
+  }
+
+  // Helper function for error handling
+  const handleAuthError = (res, data, resultBox) => {
+    const errorMsg = data.error || `Error ${res.status}: Operation failed.`
+    resultBox.textContent = errorMsg
+    resultBox.style.color = "red"
+    console.error("API Error:", data)
+  }
 
   // -----------------------------
   // REGISTER
@@ -16,40 +42,35 @@ document.addEventListener("DOMContentLoaded", () => {
       const confirmPassword = document.getElementById("Confirm").value
       const resultBox = document.getElementById("registerResult")
 
-      // 1. password match check
+      // 1. Password match check
       if (password !== confirmPassword) {
         resultBox.textContent = "Passwords do not match."
         resultBox.style.color = "red"
         return
       }
 
-      // 2. call backend API
+      // 2. Call backend API (Registration + Automatic Login)
       try {
         const res = await fetch(`${API_BASE}/users`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, email, password }),
+          // IMPORTANT: Must include credentials for the browser to receive and save the JWT Cookie from the backend
+          credentials: "include",
         })
 
         const data = await res.json()
 
-        console.log(data, res)
-
         if (res.ok) {
-          resultBox.textContent = `User created! ID: ${data.id}`
-          resultBox.style.color = "green"
-
-          // redirect after 800ms
-          setTimeout(() => {
-            window.location.href = "/account"
-          }, 800)
+          // If registration is successful, the API has set the JWT Cookie.
+          handleAuthSuccess(data, resultBox)
         } else {
-          resultBox.textContent = data.error || "Register failed."
-          resultBox.style.color = "red"
+          // Handle registration failure
+          handleAuthError(res, data, resultBox)
         }
       } catch (err) {
-        console.error(err)
-        resultBox.textContent = "Network error. Please try again."
+        console.error("Network Error:", err)
+        resultBox.textContent = "Network error. Please check your connection."
         resultBox.style.color = "red"
       }
     })
@@ -64,8 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault()
 
       const email = document.getElementById("loginEmail").value.trim()
-      const password = document.getElementById("loginPassword").value // you will need to add this field
-
+      const password = document.getElementById("loginPassword").value
       const resultBox = document.getElementById("loginResult")
 
       try {
@@ -73,25 +93,22 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password }),
+          // IMPORTANT: Must include credentials for the browser to receive and save the JWT Cookie
+          credentials: "include",
         })
 
         const data = await res.json()
 
         if (res.ok) {
-          resultBox.textContent = "Login success!"
-          resultBox.style.color = "green"
-
-          // redirect after 800ms
-          setTimeout(() => {
-            window.location.href = "/account"
-          }, 800)
+          // If login is successful, the API has set the JWT Cookie.
+          handleAuthSuccess(data, resultBox)
         } else {
-          resultBox.textContent = data.error || "Login failed."
-          resultBox.style.color = "red"
+          // Handle login failure
+          handleAuthError(res, data, resultBox)
         }
       } catch (err) {
-        console.error(err)
-        resultBox.textContent = "Network error."
+        console.error("Network Error:", err)
+        resultBox.textContent = "Network error. Please check your connection."
         resultBox.style.color = "red"
       }
     })
