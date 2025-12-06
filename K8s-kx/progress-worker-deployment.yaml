@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: progress-worker
+  labels:
+    app: progress-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: progress-worker
+  template:
+    metadata:
+      labels:
+        app: progress-worker
+    spec:
+      containers:
+        - name: progress-worker
+          image: pppeterliu/progress-worker:latest
+          imagePullPolicy: Always
+          env:
+            - name: RABBITMQ_URL
+              value: "amqp://guest:guest@rabbitmq:5672/"
+            - name: MONGO_URI
+              value: "mongodb://mongo:27017/progress_service"
+          # ----------- Liveness Probe (worker is alive?) -----------
+          livenessProbe:
+            exec:
+              command: ["bash", "-c", "echo 'ping'"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+
+          # ----------- Readiness Probe (worker is ready to consume messages?) -----------
+          readinessProbe:
+            exec:
+              command: ["bash", "-c", "echo 'ready'"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # ----------- Optional Resource Limits (加分项) -----------
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+      restartPolicy: Always
