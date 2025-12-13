@@ -12,7 +12,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Environment defaults.
-ENV MONGO_URI=mongodb://mongo:27017/learnhub_dev
 ENV RABBITMQ_HOST=rabbitmq
 ENV EVENT_EXCHANGE=learning_events
 
