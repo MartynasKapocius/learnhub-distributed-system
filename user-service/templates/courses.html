@@ -9,7 +9,13 @@ endblock %} {% block content %}
     </p>
     <p class="course-duration">Duration: {{ course.duration_weeks }} weeks</p>
 
-    <a href="#" class="cta-button primary large">Start This Course</a>
+    <a
+      href="#"
+      class="cta-button primary large subscribe-btn"
+      data-course-id="{{ course.id }}"
+    >
+      Start This Course
+    </a>
   </div>
 </section>
 
@@ -28,5 +34,8 @@ endblock %} {% block content %}
     <a href="/" class="cta-button secondary">← Back to Courses</a>
   </div>
 </section>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ url_for('static', filename='js/subscribe.js') }}"></script>
 
 {% endblock %}
