@@ -13,8 +13,6 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - COURSE_SERVICE_URL=http://course-service:5001/courses
       - QUIZ_SERVICE_URL=http://quiz-service:5002/quiz
-    depends_on:
-      - mongo
 
   course-service:
     build: ./course-service
@@ -29,7 +27,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
       - EVENT_EXCHANGE=learning_events
     depends_on:
-      - mongo
       - rabbitmq
 
   quiz-service:
