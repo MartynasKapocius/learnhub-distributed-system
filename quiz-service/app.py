@@ -48,8 +48,8 @@ def create_app():
     # JWT Configuration
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default-dev-secret')
     app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
-    app.config["JWT_COOKIE_SECURE"] = False  # allow local HTTP
-    app.config["JWT_COOKIE_SAMESITE"] = "Lax"
+    app.config["JWT_COOKIE_SECURE"] = True  # allow local HTTP
+    app.config["JWT_COOKIE_SAMESITE"] = "None"
     app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 
     # Initialize extensions

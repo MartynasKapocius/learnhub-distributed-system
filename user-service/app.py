@@ -63,12 +63,12 @@ app.config["JWT_REFRESH_COOKIE_PATH"] = "/"
 
 # 1. Setting: MUST be set to False for local development (http://localhost).
 # This tells Flask-JWT-Extended to allow cookies to be sent over non-HTTPS.
-app.config["JWT_COOKIE_SECURE"] = False 
+app.config["JWT_COOKIE_SECURE"] = True 
 
 # 2. Setting: Define SameSite policy for modern browsers
 # 'Lax' allows cookies to be sent on top-level navigation, which is necessary
 # if your frontend and backend are on different ports (e.g., 3000 vs 5000).
-app.config["JWT_COOKIE_SAMESITE"] = "Lax" 
+app.config["JWT_COOKIE_SAMESITE"] = "None"
 
 # 3. Setting: Ensure the JWT extension knows to look for the token in cookies
 app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
