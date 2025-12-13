@@ -34,6 +34,12 @@
 
     const quiz = await res.json()
 
+    function escapeHtml(text) {
+      const div = document.createElement("div")
+      div.innerText = text
+      return div.innerHTML
+    }
+
     // Render quiz questions
     // console.log(quiz)
     let html = `<h3>${quiz.title}</h3>`
@@ -48,7 +54,7 @@
                 <input class="radio" type="radio" name="q_${
                   i + 1
                 }" value="${idx}">
-                ${opt}
+                ${escapeHtml(opt)}
               </label><br>
             `
             )

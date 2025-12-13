@@ -1,5 +1,4 @@
 .env
 /*/.env"
 "*.db" 
-docker-compose.yml
 import_data.py

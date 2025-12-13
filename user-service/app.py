@@ -1,10 +1,7 @@
 import os
-from flask import Flask, request
+from flask import Flask
 from extensions import mongo, jwt
-from bson.objectid import ObjectId
 from dotenv import load_dotenv
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from flask_cors import CORS
 
 # load variable in .env

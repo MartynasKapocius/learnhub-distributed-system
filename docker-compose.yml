@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  user-service:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_USERNAME=${MONGO_USERNAME}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_HOST=${MONGO_HOST}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - COURSE_SERVICE_URL=http://course-service:5001/courses
+      - QUIZ_SERVICE_URL=http://quiz-service:5002/quiz
+    depends_on:
+      - mongo
+
+  course-service:
+    build: ./course-service
+    env_file:
+      - .env
+    ports:
+      - "5001:5001"
+    environment:
+      - MONGO_USERNAME=${MONGO_USERNAME}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_HOST=${MONGO_HOST}
+      - RABBITMQ_HOST=rabbitmq
+      - EVENT_EXCHANGE=learning_events
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  quiz-service:
+    build: ./quiz-service
+    env_file:
+      - .env
+    ports:
+      - "5002:5002"
+    environment:
+      - TURSO_URL=${TURSO_URL}
+      - TURSO_TOKEN=${TURSO_TOKEN}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - COURSE_SERVICE_URL=http://course-service:5001
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+    depends_on:
+      - course-service
+      - rabbitmq
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"

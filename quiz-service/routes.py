@@ -1,9 +1,8 @@
 import logging
 import json
-from datetime import datetime
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import Quiz, QuizSubmission, db
+from models import Quiz
 from services.course_validator import CourseValidator
 from services.message_publisher import MessagePublisher
 import uuid
@@ -60,12 +59,12 @@ def get_quiz(course_id):
         # -----------------------------------------------------------
         # 1. Validate that the course actually exists in Course Service
         # -----------------------------------------------------------
-        course_validator = CourseValidator(current_app.config['COURSE_SERVICE_URL'])
-        is_valid = course_validator.validate_course_exists(course_id)
+        # course_validator = CourseValidator(current_app.config['COURSE_SERVICE_URL'])
+        # is_valid = course_validator.validate_course_exists(course_id)
 
-        if not is_valid:
-            # If Course Service does not find the course, return 404
-            return jsonify({'error': 'Course not found or validation failed'}), 404
+        # if not is_valid:
+        #     # If Course Service does not find the course, return 404
+        #     return jsonify({'error': 'Course not found or validation failed'}), 404
 
         # Get Turso database client
         db = current_app.db
