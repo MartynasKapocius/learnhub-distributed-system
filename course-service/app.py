@@ -2,12 +2,23 @@
 import os
 import json
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from pymongo import MongoClient
 from bson import ObjectId
 import pika
+from mongo import get_mongo_client
+
 # load variable in .env
 load_dotenv()
+
+def get_db():
+    if "db" not in g:
+        client = get_mongo_client()
+        if client is None:
+            g.db = None
+        else:
+            g.db = client[os.getenv("DATABASE_NAME", "LearnHubDB")]["courses"]
+    return g.db
 
 # Course Service.
 def create_app():
@@ -16,15 +27,15 @@ def create_app():
     # Basic configuration.
     # === MongoDB Atlas Configuration ===
     # Read credentials from environment variables
-    MONGO_USERNAME = os.getenv("MONGO_USERNAME")
-    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
-    MONGO_HOST = os.getenv("MONGO_HOST")
+    # MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+    # MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
+    # MONGO_HOST = os.getenv("MONGO_HOST")
     DATABASE_NAME = os.getenv("DATABASE_NAME", "LearnHubDB")  # Default to LearnHubDB
 
     # Construct MongoDB Atlas connection string (SRV format)
-    MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/?appName=ds"
+    # MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/?appName=ds"
 
-    app.config["MONGO_URI"] = MONGO_URI
+    # app.config["MONGO_URI"] = MONGO_URI
     app.config["DATABASE_NAME"] = DATABASE_NAME
     # =====================================
 
@@ -33,19 +44,19 @@ def create_app():
     app.config["EVENT_EXCHANGE"] = os.getenv("EVENT_EXCHANGE", "learning_events")
 
     # MongoDB client and collection.
-    try:
-        mongo_client = MongoClient(app.config["MONGO_URI"])
-        # Explicitly specify the database
-        db = mongo_client[DATABASE_NAME]
-        course_col = db["courses"]
+    # try:
+    #     mongo_client = MongoClient(app.config["MONGO_URI"])
+    #     # Explicitly specify the database
+    #     db = mongo_client[DATABASE_NAME]
+    #     course_col = db["courses"]
         
-        # Test connection
-        mongo_client.admin.command('ping')
-        print(f"[Course Service] Connected to MongoDB Atlas: {MONGO_HOST}")
-        print(f"[Course Service] Using database: {DATABASE_NAME}")
-    except Exception as e:
-        print(f"[Course Service] Failed to connect to MongoDB: {e}")
-        raise
+    #     # Test connection
+    #     mongo_client.admin.command('ping')
+    #     print(f"[Course Service] Connected to MongoDB Atlas: {MONGO_HOST}")
+    #     print(f"[Course Service] Using database: {DATABASE_NAME}")
+    # except Exception as e:
+    #     print(f"[Course Service] Failed to connect to MongoDB: {e}")
+    #     raise
 
     # Event publisher.
     def publish_event(event_type, payload):
@@ -92,8 +103,11 @@ def create_app():
     # Health check used by Docker/K8s.
     @app.get("/health")
     def health():
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
         try:
-            count = course_col.estimated_document_count()
+            count = db.estimated_document_count()
             return {"status": "ok", "db": "ok", "count": count}
         except Exception as e:
             app.logger.error(f"Health check DB error: {e}")
@@ -102,18 +116,25 @@ def create_app():
     # Get all courses.
     @app.get("/courses")
     def get_courses():
-        docs = list(course_col.find())
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
+        
+        docs = list(db.find())
         return jsonify([to_json(d) for d in docs]), 200
 
     # Get a single course by ID.
     @app.get("/courses/<course_id>")
     def get_course(course_id):
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
         try:
             oid = ObjectId(course_id)
         except Exception:
             return {"error": "Invalid ID"}, 400
-
-        doc = course_col.find_one({"_id": oid})
+        
+        doc = db.find_one({"_id": oid})
         if not doc:
             return {"error": "Course not found"}, 404
 
@@ -122,6 +143,10 @@ def create_app():
     # Create a new course.
     @app.post("/courses")
     def create_course():
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
+
         data = request.get_json() or {}
         title = data.get("title")
         description = data.get("description", "")
@@ -129,12 +154,12 @@ def create_app():
         if not title:
             return {"error": "title is required"}, 400
 
-        result = course_col.insert_one({
+        result = db.insert_one({
             "title": title,
             "description": description
         })
 
-        created = course_col.find_one({"_id": result.inserted_id})
+        created = db.find_one({"_id": result.inserted_id})
         course_json = to_json(created)
 
         # This is where the service becomes event driven.
@@ -146,7 +171,9 @@ def create_app():
     @app.put("/courses/<course_id>")
     def update_course(course_id):
         data = request.get_json() or {}
-
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
         # Validate ObjectId.
         try:
             oid = ObjectId(course_id)
@@ -165,14 +192,14 @@ def create_app():
             return {"error": "No fields to update"}, 400
 
         # Perform update in MongoDB.
-        result = course_col.update_one({"_id": oid}, {"$set": update_fields})
+        result = db.update_one({"_id": oid}, {"$set": update_fields})
 
         # Document does not exist.
         if result.matched_count == 0:
             return {"error": "Course not found"}, 404
 
         # Fetch updated record.
-        updated = course_col.find_one({"_id": oid})
+        updated = db.find_one({"_id": oid})
         updated_json = to_json(updated)
 
         # Notify other services.
@@ -184,18 +211,22 @@ def create_app():
     @app.delete("/courses/<course_id>")
     def delete_course(course_id):
         # Validate ObjectId.
+        db = get_db()
+        if db is None:
+            return jsonify({"error": "Database unavailable"}), 503
+        
         try:
             oid = ObjectId(course_id)
         except Exception:
             return {"error": "Invalid ID"}, 400
 
         # Check if course exists before deleting.
-        doc = course_col.find_one({"_id": oid})
+        doc = db.find_one({"_id": oid})
         if not doc:
             return {"error": "Course not found"}, 404
 
         # Delete the course.
-        course_col.delete_one({"_id": oid})
+        db.delete_one({"_id": oid})
 
         deleted_json = to_json(doc)
 

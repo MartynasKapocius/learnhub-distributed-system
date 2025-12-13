@@ -26,6 +26,3 @@ def get_db():
 
 def get_users_col():
     return get_db()["users"]
-
-def get_courses_col():
-    return get_db()["courses"]

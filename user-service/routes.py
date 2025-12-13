@@ -5,7 +5,6 @@ from flask import Blueprint, request, jsonify, render_template, url_for, redirec
 from bson.objectid import ObjectId
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from extensions import mongo
 from flask_jwt_extended import create_access_token, set_access_cookies, unset_jwt_cookies, jwt_required, get_jwt_identity, verify_jwt_in_request
 from functools import wraps
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
