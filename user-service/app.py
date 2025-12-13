@@ -1,33 +1,57 @@
 import os
-from flask import Flask, session
+from flask import Flask, request
 from extensions import mongo, jwt
 from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from flask_cors import CORS
 
 # load variable in .env
 load_dotenv()
 
+# Database name constant
+DATABASE_NAME = "LearnHubDB"
+
 def create_app():
-    # create app
+    # --- 1. Environment Variable Retrieval and URI Construction ---
+    
+    # Read sensitive connection details from environment variables
+    USERNAME = os.environ.get("MONGO_USERNAME")
+    PASSWORD = os.environ.get("MONGO_PASSWORD")
+    HOST = os.environ.get("MONGO_HOST")
+
+    # Check for required variables
+    if not all([USERNAME, PASSWORD, HOST]):
+        # Raise an informative error if credentials are missing
+        raise ValueError("Missing required MongoDB environment variables (USERNAME, PASSWORD, HOST)! Please check your .env file.")
+
+    # Construct the MongoDB Atlas connection string (SRV format)
+    MONGO_URI = f"mongodb+srv://{USERNAME}:{PASSWORD}@{HOST}/?appName=ds"
+    # -----------------------------------------------------------------
+
+    # Create the Flask app instance
     app = Flask(__name__)
     
-    # setting env variable
+    # Set app configuration (read from env variables)
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "default-dev-secret")
-    app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017/learnhub_dev")
+    
+    # Set the MONGO_URI configuration key for Flask-PyMongo
+    app.config["MONGO_URI"] = MONGO_URI
+    
+    # -----------------------------------------------------------------
 
-    # Initialize extensions with the app
+    # Initialize extensions with the app instance
     jwt.init_app(app)
     mongo.init_app(app)
 
-    # ---- Debug ----
-    # print(">>> mongo.db =", mongo.db)
-    if mongo.db is not None:
-      print(">>> collections =", mongo.db.list_collection_names())
+    # -----------------------
+    # NOTE: Avoid accessing mongo.db here, as the application context 
+    # might not be fully established, which can lead to connection issues.
+    # Data operations should be done within request or application context.
     # -----------------------
 
-
+    # Register Blueprints
     from routes import user_bp
     app.register_blueprint(user_bp)
 
@@ -35,7 +59,10 @@ def create_app():
 
 app = create_app()
 
+CORS(app, supports_credentials=True)
+
 app.config["JWT_ACCESS_COOKIE_PATH"] = "/"
+app.config["JWT_REFRESH_COOKIE_PATH"] = "/"
 
 # 1. Setting: MUST be set to False for local development (http://localhost).
 # This tells Flask-JWT-Extended to allow cookies to be sent over non-HTTPS.
@@ -52,44 +79,5 @@ app.config["JWT_TOKEN_LOCATION"] = ["cookies"]
 # Optional: Setting a specific cookie name for clarity
 app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 
-@app.context_processor
-def inject_user():
-    """
-    Context processor to make the current_user available in all Jinja2 templates,
-    using try/except blocks to handle expired tokens gracefully.
-    """
-    
-    current_user = None
-    is_authenticated = False
-    
-    try:
-        # 1. Attempt to verify the JWT. This will raise an exception if the token is expired or invalid.
-        # optional=True is used here, so it only fails if a token is present but bad.
-        is_verified = verify_jwt_in_request(optional=True)
-        
-        # Check if verification succeeded and an identity was loaded
-        if is_verified:
-            # If successful, get_jwt_identity() is safe to call
-            current_user_id = get_jwt_identity()
-            
-            if current_user_id:
-                # 2. Check complete, proceed to fetch user data
-                user_id_obj = ObjectId(current_user_id)
-                current_user = mongo.db.users.find_one({"_id": user_id_obj})
-                is_authenticated = True
-                
-    except (ExpiredSignatureError, InvalidTokenError) as e:
-        # 3. Catch JWT errors (expired or invalid signature)
-        # We silently ignore the error and leave current_user as None.
-        print(f"Token error handled in context processor: {e}")
-        pass
-    except Exception as e:
-        # Catch errors from ObjectId conversion or DB access
-        print(f"General error in context processor: {e}")
-        pass
-        
-    # 4. Return the user object to the template context as 'current_user'
-    return dict(current_user=current_user)
-
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

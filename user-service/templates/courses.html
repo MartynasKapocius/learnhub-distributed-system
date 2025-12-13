@@ -1,0 +1,32 @@
+{% extends "layout.html" %} {% block title %}{{ course.title }} | LearnHub{%
+endblock %} {% block content %}
+
+<section class="course-hero">
+  <div class="container course-hero-content">
+    <h1>{{ course.title }}</h1>
+    <p class="course-category">
+      {{ course.category }} · {{ course.difficulty }}
+    </p>
+    <p class="course-duration">Duration: {{ course.duration_weeks }} weeks</p>
+
+    <a href="#" class="cta-button primary large">Start This Course</a>
+  </div>
+</section>
+
+<section class="section course-details">
+  <div class="container detail-wrapper">
+    <h2>About This Course</h2>
+    <p class="description-text">{{ course.description }}</p>
+
+    <h2>Learning Outcomes</h2>
+    <ul class="outcomes-list">
+      {% for outcome in course.learning_outcomes %}
+      <li>{{ outcome }}</li>
+      {% endfor %}
+    </ul>
+
+    <a href="/" class="cta-button secondary">← Back to Courses</a>
+  </div>
+</section>
+
+{% endblock %}

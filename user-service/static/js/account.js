@@ -1,67 +1,40 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const API_BASE = "/api"
 
-  // fetch current user
+  // ----------------------
+  // 1. Fetch current user
+  // ----------------------
   let user = null
   try {
-    // Fetch user details. The JWT Cookie is sent automatically by the browser.
     const res = await fetch(`${API_BASE}/me`, {
       method: "GET",
-      // ESSENTIAL: Add credentials to ensure the browser sends the cookie!
       credentials: "include",
     })
 
-    if (res.ok) {
-      user = await res.json()
-    } else if (res.status === 401) {
-      // Handle 401: Token Cookie is missing or invalid.
-      console.error("Authentication failed. Redirecting to login.")
+    if (!res.ok) {
       window.location.href = "/login"
       return
-    } else {
-      // Handle other API errors
-      throw new Error(`API returned status ${res.status}`)
     }
+
+    user = await res.json()
   } catch (err) {
-    console.error("Failed to load current user", err)
-    // In case of network error, redirect
+    console.error("Failed to load user", err)
     window.location.href = "/login"
     return
   }
 
-  // --- Profile Filling Logic ---
-  // Fill Profile
-  const nameSpan = document.getElementById("profileName")
-  const emailSpan = document.getElementById("profileEmail")
-  if (nameSpan && emailSpan) {
-    nameSpan.textContent = user.name
-    emailSpan.textContent = user.email
-  }
+  // Fill profile info
+  document.getElementById("profileName").textContent = user.name
+  document.getElementById("profileEmail").textContent = user.email
 
-  // Subscription section
-  const subBox = document.getElementById("subscriptionContent")
-  if (!subBox) return
+  // ----------------------
+  // 2. Subscription section
+  // ----------------------
+  loadSubscriptions(user)
 
-  // check if user.subscription exists
-  if (!user.subscription) {
-    subBox.innerHTML = `
-      <p>You do not have an active subscription.</p>
-      <button id="goCourses">Browse Courses</button>
-    `
-    const btn = document.getElementById("goCourses")
-    if (btn) {
-      btn.addEventListener("click", () => {
-        window.location.href = "/courses"
-      })
-    }
-  } else {
-    subBox.innerHTML = `
-      <p><strong>Plan:</strong> ${user.subscription.plan}</p>
-      <p><strong>Renews on:</strong> ${user.subscription.renews}</p>
-    `
-  }
-
-  // Tabs Switching Logic
+  // ----------------------
+  // 3. Tabs logic
+  // ----------------------
   const tabButtons = document.querySelectorAll(".tab-button")
   const tabPanels = document.querySelectorAll(".tab-panel")
 
@@ -78,3 +51,85 @@ document.addEventListener("DOMContentLoaded", async () => {
     })
   })
 })
+
+// ================================================
+// Load Subscription Items
+// ================================================
+async function loadSubscriptions(user) {
+  const subBox = document.getElementById("subscriptionContent")
+
+  const subs = user.subscriptions || []
+
+  if (subs.length === 0) {
+    subBox.innerHTML = `<p>You have no active subscriptions.</p>`
+    return
+  }
+
+  // fetch all courses to look up names
+  const courseRes = await fetch("/api/courses-data")
+  const allCourses = await courseRes.json()
+
+  subBox.innerHTML = ""
+
+  subs.forEach((sub) => {
+    const course = allCourses.find((c) => c.id === sub.course_id)
+
+    const name = course ? course.title : "Unknown Course"
+    const date = new Date(sub.subscribed_at.$date).toLocaleDateString()
+
+    const div = document.createElement("div")
+    div.className = "subscription-item"
+    div.innerHTML = `
+      <p><strong>${name}</strong></p>
+      <p>Subscribed on: ${date}</p>
+      <a href="/quiz/${sub.course_id}" class="cta-button secondary" style="margin-right:10px;">
+        Start Quiz
+      </a>
+      <button class="unsubscribe-btn" data-id="${sub.course_id}">
+        Cancel Subscription
+      </button>
+    `
+    subBox.appendChild(div)
+  })
+
+  // bind cancel buttons
+  document.querySelectorAll(".unsubscribe-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id
+      await unsubscribeCourse(id)
+
+      // refresh UI
+      const res = await fetch("/api/me", { credentials: "include" })
+      const user = await res.json()
+      loadSubscriptions(user)
+    })
+  })
+}
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(";").shift()
+}
+
+const csrf = getCookie("csrf_access_token")
+
+// ================================================
+// Unsubscribe
+// ================================================
+async function unsubscribeCourse(courseId) {
+  const res = await fetch(`/api/unsubscribe/${courseId}`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      "X-CSRF-TOKEN": csrf,
+    },
+  })
+
+  if (!res.ok) {
+    alert("Failed to unsubscribe.")
+    return
+  }
+
+  alert("Subscription cancelled.")
+}

@@ -1,0 +1,103 @@
+{% extends "layout.html" %} {% block title %}Quiz{% endblock %} {% block content
+%}
+<div class="container">
+  <div class="quiz-wrapper">
+    <h2 style="text-align: center; color: #146eff; margin-bottom: 20px">
+      Quiz
+    </h2>
+
+    <div id="quizContainer">Loading quiz...</div>
+
+    <button id="submitQuiz" class="cta-button primary" style="margin-top: 20px">
+      Submit Quiz
+    </button>
+
+    <div id="quizResult" style="margin-top: 20px; font-weight: bold"></div>
+  </div>
+</div>
+
+<script>
+  const courseId = "{{ course_id }}"
+  const user_id = "{{ user_id }}"
+  const QUIZ_API = "/api/quiz/" + courseId
+  const SUBMIT_API = "/api/submit" // same idea
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const container = document.getElementById("quizContainer")
+
+    // Fetch quiz data from quiz-service
+    const res = await fetch(QUIZ_API, { credentials: "include" })
+    if (!res.ok) {
+      container.innerHTML = "Failed to load quiz."
+      return
+    }
+
+    const quiz = await res.json()
+
+    // Render quiz questions
+    // console.log(quiz)
+    let html = `<h3>${quiz.title}</h3>`
+    quiz.questions.forEach((q, i) => {
+      html += `
+        <div class="question-block">
+          <p><strong>${i + 1}. ${q.question}</strong></p>
+          ${q.options
+            .map(
+              (opt, idx) => `
+              <label>
+                <input class="radio" type="radio" name="q_${
+                  i + 1
+                }" value="${idx}">
+                ${opt}
+              </label><br>
+            `
+            )
+            .join("")}
+        </div>
+      `
+    })
+
+    container.innerHTML = html
+
+    // Handle submit
+    document
+      .getElementById("submitQuiz")
+      .addEventListener("click", async () => {
+        const answers = []
+
+        quiz.questions.forEach((q, i) => {
+          const chosen = document.querySelector(
+            `input[name="q_${i + 1}"]:checked`
+          )
+          if (chosen) {
+            answers[i] = Number(chosen.value)
+          }
+        })
+
+        const submitRes = await fetch(SUBMIT_API, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answers: answers,
+            quiz: quiz,
+            user_id,
+          }),
+        })
+
+        const data = await submitRes.json()
+        const resultBox = document.getElementById("quizResult")
+
+        if (submitRes.ok) {
+          resultBox.innerHTML = `
+          Score: ${data.score} / ${data.total_questions}<br>
+          Percentage: ${data.percentage}%
+        `
+        } else {
+          resultBox.innerHTML = "Failed to submit quiz."
+        }
+      })
+  })
+</script>
+
+{% endblock %}

@@ -28,7 +28,7 @@ class CourseValidator:
         Returns:
             bool: True if course exists, False otherwise
         """
-        url = f"{self.course_service_url}/courses/{course_id}"
+        url = f"{self.course_service_url}/{course_id}"
 
         for attempt in range(self.max_retries):
             try:

@@ -1,27 +1,51 @@
 # Importing.
 import os
 import json
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from pymongo import MongoClient
 from bson import ObjectId
 import pika
-
+# load variable in .env
+load_dotenv()
 
 # Course Service.
 def create_app():
     app = Flask(__name__)
 
     # Basic configuration.
-    app.config["MONGO_URI"] = os.getenv("MONGO_URI", "mongodb://mongo:27017/learnhub_dev")
+    # === MongoDB Atlas Configuration ===
+    # Read credentials from environment variables
+    MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+    MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
+    MONGO_HOST = os.getenv("MONGO_HOST")
+    DATABASE_NAME = os.getenv("DATABASE_NAME", "LearnHubDB")  # Default to LearnHubDB
+
+    # Construct MongoDB Atlas connection string (SRV format)
+    MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/?appName=ds"
+
+    app.config["MONGO_URI"] = MONGO_URI
+    app.config["DATABASE_NAME"] = DATABASE_NAME
+    # =====================================
+
+    # RabbitMQ configuration (optional)
     app.config["RABBITMQ_HOST"] = os.getenv("RABBITMQ_HOST", "rabbitmq")
     app.config["EVENT_EXCHANGE"] = os.getenv("EVENT_EXCHANGE", "learning_events")
 
     # MongoDB client and collection.
-    mongo_client = MongoClient(app.config["MONGO_URI"])
-    db = mongo_client.get_default_database()
-    course_col = db["courses"]
-
-    print(f"[Course Service] Connected to MongoDB: {app.config['MONGO_URI']}")
+    try:
+        mongo_client = MongoClient(app.config["MONGO_URI"])
+        # Explicitly specify the database
+        db = mongo_client[DATABASE_NAME]
+        course_col = db["courses"]
+        
+        # Test connection
+        mongo_client.admin.command('ping')
+        print(f"[Course Service] Connected to MongoDB Atlas: {MONGO_HOST}")
+        print(f"[Course Service] Using database: {DATABASE_NAME}")
+    except Exception as e:
+        print(f"[Course Service] Failed to connect to MongoDB: {e}")
+        raise
 
     # Event publisher.
     def publish_event(event_type, payload):
@@ -57,11 +81,13 @@ def create_app():
 
     # Convert MongoDB document to a JSON safe dict.
     def to_json(doc):
-        return {
-            "id": str(doc["_id"]),
-            "title": doc.get("title"),
-            "description": doc.get("description", "")
-        }
+        result = {}
+        for k, v in doc.items():
+            if isinstance(v, ObjectId):
+                result["id"] = str(v)
+            else:
+                result[k] = v
+        return result
 
     # Health check used by Docker/K8s.
     @app.get("/health")

@@ -1,3 +1,5 @@
 .env
-/user-service/.env"quiz-service/.env" 
+/*/.env"
 "*.db" 
+docker-compose.yml
+import_data.py

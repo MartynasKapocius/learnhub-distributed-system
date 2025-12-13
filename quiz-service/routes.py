@@ -6,10 +6,43 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import Quiz, QuizSubmission, db
 from services.course_validator import CourseValidator
 from services.message_publisher import MessagePublisher
+import uuid
 
 logger = logging.getLogger(__name__)
 
 quiz_bp = Blueprint('quiz', __name__)
+
+def calculate_quiz_score(quiz, answers):
+    score = 0
+    i = 0
+    for q in quiz["questions"]:
+        correct = q["answer_index"]
+        if int(answers[i]) == correct:
+            score += 1
+        i += 1
+    return score
+
+def save_quiz_submission(db, user_id, quiz_id, course_id, answers, score):
+
+    submission_id = str(uuid.uuid4())
+
+    db.execute(
+        """
+        INSERT INTO quiz_submissions 
+        (id, user_id, quiz_id, course_id, answers_json, score)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        [
+            submission_id,
+            user_id,
+            quiz_id,
+            course_id,
+            json.dumps(answers),
+            score,
+        ]
+    )
+
+    return submission_id
 
 
 @quiz_bp.route('/health', methods=['GET'])
@@ -24,99 +57,99 @@ def get_quiz(course_id):
         user_id = get_jwt_identity()
         logger.info(f"User {user_id} requesting quiz for course {course_id}")
 
-        # Validate course exists
+        # -----------------------------------------------------------
+        # 1. Validate that the course actually exists in Course Service
+        # -----------------------------------------------------------
         course_validator = CourseValidator(current_app.config['COURSE_SERVICE_URL'])
         is_valid = course_validator.validate_course_exists(course_id)
 
         if not is_valid:
+            # If Course Service does not find the course, return 404
             return jsonify({'error': 'Course not found or validation failed'}), 404
 
-        # Get or create quiz
-        quiz = Quiz.query.filter_by(course_id=course_id).first()
+        # Get Turso database client
+        db = current_app.db
+        
+        # -----------------------------------------------------------
+        # 2. Check if a quiz already exists for this course in the DB
+        # -----------------------------------------------------------
+        result = db.execute(
+            "SELECT id, course_id, title, questions_json FROM quizzes WHERE course_id = ?",
+            [course_id]
+        )
+        row = result.rows[0] if result.rows else None
 
-        if not quiz:
+        # -----------------------------------------------------------
+        # 3. If no quiz exists yet → Automatically create a default quiz
+        # -----------------------------------------------------------
+        if not row:
             quiz = create_default_quiz(course_id)
-            db.session.add(quiz)
-            db.session.commit()
 
+            # Insert newly created quiz into Turso
+            db.execute(
+                "INSERT INTO quizzes (course_id, title, questions_json) VALUES (?, ?, ?)",
+                [
+                    quiz["course_id"],
+                    quiz["title"],
+                    json.dumps(quiz["questions"])  # Store questions as JSON text
+                ]
+            )
+
+            # Query again to retrieve the inserted quiz record
+            result = db.execute(
+                "SELECT id, course_id, title, questions_json FROM quizzes WHERE course_id = ?",
+                [course_id]
+            )
+            row = result.rows[0]
+
+        # -----------------------------------------------------------
+        # 4. Build the final JSON response for the client
+        # -----------------------------------------------------------
         response_data = {
-            'quiz_id': str(quiz.id),
-            'course_id': quiz.course_id,
-            'title': quiz.title,
-            'questions': quiz.questions
+            "quiz_id": row["id"],
+            "course_id": row["course_id"],
+            "title": row["title"],
+            "questions": json.loads(row["questions_json"])  # Convert JSON string back to list
         }
 
         logger.info(f"Quiz retrieved successfully for course {course_id}")
         return jsonify(response_data), 200
 
     except Exception as e:
+        # Catch-all error logging for debugging
         logger.error(f"Error getting quiz for course {course_id}: {str(e)}")
         return jsonify({'error': 'Internal server error'}), 500
 
-
 @quiz_bp.route('/quiz/submit', methods=['POST'])
-@jwt_required()
 def submit_quiz():
     try:
-        user_id = get_jwt_identity()
         data = request.get_json()
+        quiz = data["quiz"]
+        answers = data["answers"]
 
-        if not data or 'quiz_id' not in data or 'answers' not in data:
-            return jsonify({'error': 'Missing quiz_id or answers'}), 400
-
-        quiz_id = int(data['quiz_id'])
-        answers = data['answers']
-
-        logger.info(f"User {user_id} submitting quiz {quiz_id}")
-
-        quiz = Quiz.query.get(quiz_id)
-        if not quiz:
-            return jsonify({'error': 'Quiz not found'}), 404
-
-        # Calculate score
+        # 1. count the score
         score = calculate_quiz_score(quiz, answers)
 
-        # Store submission
-        submission = QuizSubmission(
-            user_id=user_id,
-            quiz_id=quiz_id,
-            course_id=quiz.course_id,
+        # 2. save to turso
+        submission_id = save_quiz_submission(
+            db=current_app.db,
+            user_id=data["user_id"],
+            quiz_id=quiz["quiz_id"],
+            course_id=quiz["course_id"],
             answers=answers,
             score=score
         )
 
-        db.session.add(submission)
-        db.session.commit()
-
-        # Publish event
-        try:
-            publisher = MessagePublisher(current_app.config['RABBITMQ_URL'])
-            event_data = {
-                'event_type': 'quiz_submitted',
-                'user_id': user_id,
-                'course_id': quiz.course_id,
-                'quiz_id': quiz_id,
-                'score': score,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-            publisher.publish_quiz_event(event_data)
-            logger.info(f"Quiz submission event published for user {user_id}")
-        except Exception as e:
-            logger.error(f"Failed to publish quiz event: {str(e)}")
-
-        response_data = {
-            'submission_id': str(submission.id),
-            'score': score,
-            'total_questions': len(quiz.questions),
-            'percentage': round((score / len(quiz.questions)) * 100, 2)
-        }
-
-        logger.info(f"Quiz submitted successfully by user {user_id}, score: {score}")
-        return jsonify(response_data), 200
+        return jsonify({
+            "submission_id": submission_id,
+            "score": score,
+            "total_questions": len(quiz["questions"]),
+            "percentage": round((score / len(quiz["questions"])) * 100, 2)
+        }), 200
 
     except Exception as e:
         logger.error(f"Error submitting quiz: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({"error": "Internal server error"}), 500
 
 
 def create_default_quiz(course_id):
@@ -338,16 +371,16 @@ def create_default_quiz(course_id):
     return quiz
 
 
-def calculate_quiz_score(quiz, answers):
-    score = 0
-    questions = quiz.questions
+# def calculate_quiz_score(quiz, answers):
+#     score = 0
+#     questions = quiz.questions
 
-    for question in questions:
-        question_id = str(question['id'])
-        if question_id in answers:
-            user_answer = answers[question_id]
-            correct_answer = question['correct_answer']
-            if user_answer == correct_answer:
-                score += 1
+#     for question in questions:
+#         question_id = str(question['id'])
+#         if question_id in answers:
+#             user_answer = answers[question_id]
+#             correct_answer = question['correct_answer']
+#             if user_answer == correct_answer:
+#                 score += 1
 
-    return score
+#     return score
