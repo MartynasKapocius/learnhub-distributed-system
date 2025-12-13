@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y \
     openssl \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY user-service/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY user-service/ .
+COPY . .
 CMD ["python", "app.py"]
