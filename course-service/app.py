@@ -40,7 +40,7 @@ def create_app():
     # =====================================
 
     # RabbitMQ configuration (optional)
-    app.config["RABBITMQ_HOST"] = os.getenv("RABBITMQ_HOST", "rabbitmq")
+    app.config["RABBITMQ_URL"] = os.getenv("RABBITMQ_URL")
     app.config["EVENT_EXCHANGE"] = os.getenv("EVENT_EXCHANGE", "learning_events")
 
     # MongoDB client and collection.
@@ -66,7 +66,7 @@ def create_app():
         """
         try:
             connection = pika.BlockingConnection(
-                pika.ConnectionParameters(host=app.config["RABBITMQ_HOST"])
+                pika.URLParameters(app.config["RABBITMQ_URL"])
             )
             channel = connection.channel()
 

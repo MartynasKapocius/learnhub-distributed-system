@@ -40,10 +40,15 @@ def create_db_client():
         # return a clear error message to show the error.
         raise RuntimeError(f"Database initialization failed: {e}")
 
-
-
 def create_app():
     app = Flask(__name__)
+    CORS(
+    app,
+    supports_credentials=True,
+    origins=[
+        os.getenv("USER_SERVICE_URL"),  # frontend
+    ]
+)
     
     # JWT Configuration
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'default-dev-secret')
@@ -53,11 +58,11 @@ def create_app():
     app.config["JWT_ACCESS_COOKIE_NAME"] = "access_token_cookie"
 
     # Initialize extensions
-    jwt = JWTManager(app)
+    JWTManager(app)
 
     # Attach Turso database client to app
     app.db = create_db_client()
-
+    
     # Attach course service URL
     app.config["COURSE_SERVICE_URL"] = os.getenv(
         "COURSE_SERVICE_URL",
@@ -80,5 +85,4 @@ def create_app():
 
 if __name__ == '__main__':
     app = create_app()
-    CORS(app, supports_credentials=True)
     app.run(host='0.0.0.0', port=5002, debug=True)

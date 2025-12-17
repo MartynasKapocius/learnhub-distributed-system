@@ -8,8 +8,11 @@ import pika
 from pymongo import MongoClient, ASCENDING
 from pymongo.errors import PyMongoError
 from tenacity import retry, wait_exponential, stop_after_attempt
+from dotenv import load_dotenv
 
 from utils import compute_progress_metrics
+
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("progress_worker")
@@ -18,7 +21,7 @@ logger = logging.getLogger("progress_worker")
 # Environment Variables
 # --------------------------
 RABBITMQ_URL = os.getenv("RABBITMQ_URL", "amqp://guest:guest@rabbitmq:5672/")
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/progress_service")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb://mongo:27017/progress_service")
 
 EXCHANGE_NAME = "quiz_events"
 ROUTING_KEY = "quiz.submitted"
@@ -28,15 +31,14 @@ QUEUE_NAME = "progress_queue"
 # Setup MongoDB
 # --------------------------
 mongo_client = MongoClient(MONGO_URI, socketTimeoutMS=5000)
-db = mongo_client.get_database()
+db = mongo_client[os.getenv("DATABASE_NAME", "LearnHubDB")]
 progress_col = db["progress"]
 
 # secure that same one user+one course has one progress record
 progress_col.create_index(
-    [("user_id", ASCENDING), ("course_id", ASCENDING)],
+    [("user_id", ASCENDING), ("course_id", ASCENDING), ("quiz_id", ASCENDING)],
     unique=True
 )
-
 
 # --------------------------
 # Helpers
@@ -67,12 +69,13 @@ def update_progress(event):
     logger.info(f"Updating progress for user={user_id}, course={course_id}")
 
     # get the current progress record
-    progress = progress_col.find_one({"user_id": user_id, "course_id": course_id})
+    progress = progress_col.find_one({
+        "user_id": user_id,
+        "course_id": course_id,
+        "quiz_id": quiz_id
+    })
 
-    if not progress:
-        attempts = []
-    else:
-        attempts = progress.get("attempts", [])
+    attempts = progress.get("attempts", []) if progress else []
 
     # if the timestamp exists, jump it
     if any(a["timestamp"] == timestamp for a in attempts):
@@ -93,6 +96,7 @@ def update_progress(event):
         "$set": {
             "user_id": user_id,
             "course_id": course_id,
+            "quiz_id": quiz_id,
             "attempts": attempts,
             "total_attempts": metrics["total_attempts"],
             "last_score": metrics["last_score"],
@@ -104,7 +108,7 @@ def update_progress(event):
     }
 
     progress_col.update_one(
-        {"user_id": user_id, "course_id": course_id},
+        {"user_id": user_id, "course_id": course_id, "quiz_id": quiz_id},
         update_doc,
         upsert=True
     )

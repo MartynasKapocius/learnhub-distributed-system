@@ -23,6 +23,11 @@ QUIZ_SERVICE_URL = os.getenv(
     "http://localhost:5002/quiz"  # fallback
 )
 
+PROGRESS_SERVICE_URL = os.getenv(
+    "PROGRESS_SERVICE_URL",
+    "http://localhost:5003/progress"  # fallback
+)
+
 def redirect_if_authenticated(f):
     """
     Decorator that redirects the user to the account page if a valid, non-expired JWT is found.
@@ -277,6 +282,7 @@ def proxy_get_quiz(course_id):
         return jsonify({"error": "Quiz service unavailable"}), 500
     
 @user_bp.route("/api/submit", methods=["POST"])
+@jwt_required()
 def submit_quiz():
     data = request.json
     try:
@@ -298,6 +304,38 @@ def submit_quiz():
         print("Quiz proxy error:", e)
         return jsonify({"error": "Quiz service unavailable"}), 500
 
+
+@user_bp.route("/api/progress/<user_id>/<course_id>/<quiz_id>", methods=["GET"])
+@jwt_required()
+def get_quiz_progress(user_id, course_id, quiz_id):
+    """
+    Get progress of a specific quiz for a user in a course
+    """
+
+    url = f"{PROGRESS_SERVICE_URL}/{user_id}/{course_id}/{quiz_id}"
+
+    result = requests.get(url)
+    data = result.json()
+
+    if data.get("message") == "No progress data yet":
+        return jsonify({
+            "message": "No progress data found",
+            "user_id": user_id,
+            "course_id": course_id,
+            "quiz_id": quiz_id
+        })
+
+    return jsonify({
+        "user_id": user_id,
+        "course_id": course_id,
+        "quiz_id": quiz_id,
+        "best_score": data.get("highest_score"),
+        "last_score": data.get("recent_score"),
+        "average_score": data.get("average_score"),
+        "total_attempts": data.get("attempts"),
+        "improvement_percentage": data.get("improvement"),
+        "updated_at": data.get("updated_at")
+    }), 200
 
 # ========================================
 # Page Routes
@@ -343,7 +381,6 @@ def quiz_page(course_id):
         return redirect(url_for("home"))
 
     return render_template("quiz.html", course_id=course_id, user_id=current_user["_id"])
-
 
 @user_bp.route("/subscriptions")
 def subscriptions():

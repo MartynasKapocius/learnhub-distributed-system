@@ -22,6 +22,15 @@
   const QUIZ_API = "/api/quiz/" + courseId
   const SUBMIT_API = "/api/submit" // same idea
 
+  function getCookie(name) {
+    return document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(name + "="))
+      ?.split("=")[1]
+  }
+
+  const csrfToken = getCookie("csrf_access_token")
+
   document.addEventListener("DOMContentLoaded", async () => {
     const container = document.getElementById("quizContainer")
 
@@ -83,7 +92,10 @@
         const submitRes = await fetch(SUBMIT_API, {
           method: "POST",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "X-CSRF-TOKEN": csrfToken,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             answers: answers,
             quiz: quiz,

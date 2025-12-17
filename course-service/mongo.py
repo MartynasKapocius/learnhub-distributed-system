@@ -22,7 +22,7 @@ def get_mongo_client():
     if _mongo_client is not None:
         return _mongo_client
     
-    MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/?appName=ds"
+    MONGO_URI = f"mongodb+srv://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}/?appName=ds&tlsAllowInvalidCertificates=true"
 
     if not MONGO_URI:
         raise RuntimeError("MONGO_URI is not set")

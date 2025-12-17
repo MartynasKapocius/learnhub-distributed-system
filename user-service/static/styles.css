@@ -502,3 +502,20 @@ button:hover {
     flex: 1;
     width: auto;
 }
+
+.progress-summary {
+    background: #f7f7f7;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.progress-summary p {
+    margin: 4px 0;
+}
+
+.muted {
+    color: #777;
+    font-size: 13px;
+}
