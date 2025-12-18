@@ -48,7 +48,6 @@ services:
   # -------------------------
   progress-worker:
     build: ./progress-service
-    container_name: progress-worker
     environment:
       RABBITMQ_URL: ${RABBITMQ_URL}
       MONGO_URI: mongodb+srv://${USERNAME}:${PASSWORD}@${HOST}/?appName=ds
@@ -60,7 +59,6 @@ services:
   # -------------------------
   progress-api:
     build: ./progress-api
-    container_name: progress-api
     ports:
       - "5003:5003"
     environment:
