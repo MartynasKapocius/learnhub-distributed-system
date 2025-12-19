@@ -54,14 +54,14 @@ jobs:
           tags: ghcr.io/peja016/quiz-service:latest
 
       # -------------------------
-      # progress-worker
+      # progress-service
       # -------------------------
-      - name: Build & push progress-worker
+      - name: Build & push progress-service
         uses: docker/build-push-action@v5
         with:
           context: ./progress-service
           push: true
-          tags: ghcr.io/peja016/progress-worker:latest
+          tags: ghcr.io/peja016/progress-service:latest
 
       # -------------------------
       # progress-api

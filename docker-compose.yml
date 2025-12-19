@@ -44,9 +44,9 @@ services:
       - course-service
 
   # -------------------------
-  # Progress Worker
+  # Progress service
   # -------------------------
-  progress-worker:
+  progress-service:
     build: ./progress-service
     image: ghcr.io/peja016/progress-service:latest
     environment:
