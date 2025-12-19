@@ -75,7 +75,7 @@ async function loadSubscriptions(user) {
   for (const sub of subs) {
     const course = allCourses.find((c) => c.id === sub.course_id)
     const courseName = course ? course.title : "Unknown Course"
-    const date = new Date(sub.subscribed_at.$date).toLocaleDateString()
+    const date = new Date(sub.subscribed_at).toLocaleDateString()
 
     let quiz = null
     try {
@@ -119,9 +119,9 @@ async function loadSubscriptions(user) {
       <p class="muted">Subscribed on: ${date}</p>
       
       <div class="progress-summary">
-        <p>🏆 Best score: <strong>${bestScore}</strong></p>
-        <p>📝 Attempts: <strong>${attempts}</strong></p>
-        <p>📌 Last score: <strong>${lastScore}</strong></p>
+        <p>Best score: <strong>${bestScore}</strong></p>
+        <p>Attempts: <strong>${attempts}</strong></p>
+        <p>Last score: <strong>${lastScore}</strong></p>
       </div>
 
       <a href="/quiz/${sub.course_id}" class="cta-button secondary" style="margin-right:10px;">
