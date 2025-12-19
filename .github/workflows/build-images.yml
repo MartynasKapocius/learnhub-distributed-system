@@ -1,0 +1,74 @@
+name: Build and Push Images (GHCR)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # -------------------------
+      # user-service
+      # -------------------------
+      - name: Build & push user-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./user-service
+          push: true
+          tags: ghcr.io/peja016/user-service:latest
+
+      # -------------------------
+      # course-service
+      # -------------------------
+      - name: Build & push course-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./course-service
+          push: true
+          tags: ghcr.io/peja016/course-service:latest
+
+      # -------------------------
+      # quiz-service
+      # -------------------------
+      - name: Build & push quiz-service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./quiz-service
+          push: true
+          tags: ghcr.io/peja016/quiz-service:latest
+
+      # -------------------------
+      # progress-worker
+      # -------------------------
+      - name: Build & push progress-worker
+        uses: docker/build-push-action@v5
+        with:
+          context: ./progress-service
+          push: true
+          tags: ghcr.io/peja016/progress-worker:latest
+
+      # -------------------------
+      # progress-api
+      # -------------------------
+      - name: Build & push progress-api
+        uses: docker/build-push-action@v5
+        with:
+          context: ./progress-api
+          push: true
+          tags: ghcr.io/peja016/progress-api:latest
