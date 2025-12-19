@@ -39,15 +39,12 @@ services:
       - TURSO_TOKEN=${TURSO_TOKEN}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - COURSE_SERVICE_URL=http://course-service:5001
+      - USER_SERVICE_URL=http://user-service:5000
       - RABBITMQ_URL=${RABBITMQ_URL}
     depends_on:
       - course-service
 
-  # -------------------------
-  # Progress service
-  # -------------------------
   progress-service:
-    build: ./progress-service
     image: ghcr.io/peja016/progress-service:latest
     environment:
       RABBITMQ_URL: ${RABBITMQ_URL}
@@ -55,11 +52,8 @@ services:
       DATABASE_NAME: ${DATABASE_NAME}
     restart: unless-stopped
 
-  # -------------------------
-  # Progress API
-  # -------------------------
   progress-api:
-    build: ./progress-api
+    image: ghcr.io/peja016/progress-api:latest
     ports:
       - "5003:5003"
     environment:

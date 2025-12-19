@@ -55,7 +55,7 @@ def health_check():
 def get_quiz(course_id):
     try:
         user_id = get_jwt_identity()
-        print(user_id)
+        
         logger.info(f"User {user_id} requesting quiz for course {course_id}")
 
         # -----------------------------------------------------------
