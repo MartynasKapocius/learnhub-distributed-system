@@ -16,21 +16,21 @@ This application is available via a single public endpoint, with NGINX handling 
 
 2. Register a new user and log in.
    
-   ![](C:\Users\kexun\AppData\Roaming\marktext\images\2025-12-21-21-15-10-image.png)
+   ![](images/register-login.png)
 
 3. Browse available courses.
    
-   ![](C:\Users\kexun\AppData\Roaming\marktext\images\2025-12-21-21-16-20-image.png)
+   ![](images/browse-courses.png)
 
 4. Start and submit a quiz.
    
-   ![](C:\Users\kexun\AppData\Roaming\marktext\images\2025-12-21-21-16-44-image.png)
+   ![](images/subscribe.png)
    
-   ![](C:\Users\kexun\AppData\Roaming\marktext\images\2025-12-21-21-17-59-image.png)
+   ![](images/start_a_quiz.png)
 
 5. View learning progress and quiz results.
 
-   ![](C:\Users\kexun\AppData\Roaming\marktext\images\2025-12-21-21-19-10-image.png)Note: progress updates may appear with a short delay due to asynchronous processing.
+   ![](images/progress.png)Note: progress updates may appear with a short delay due to asynchronous processing.
 
 ## System Architecture
 
@@ -139,3 +139,4 @@ After starting the system locally:
 ## Report
 
 The architectural design report, including system diagrams, trade-off analysis, and Architectural Decision Records (ADRs), is included as part of the project submission.
+
