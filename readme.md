@@ -1,8 +1,14 @@
 # LearnHub – Distributed Microservices Learning Platform
 
-## Application Walkthrough
+## Watch the System Demo Below
 
-[![Watch LearnHub Demo](https://img.youtube.com/vi/BIWgT2HYaFU/hqdefault.jpg)](https://youtu.be/BIWgT2HYaFU)
+<p align="center">
+  <a href="https://youtu.be/BIWgT2HYaFU">
+    <img src="https://img.youtube.com/vi/BIWgT2HYaFU/maxresdefault.jpg" width="900">
+  </a>
+</p>
+
+<p align="center"><b>▶ Click to watch the full architecture and feature walkthrough</b></p>
 
 ---
 
@@ -141,6 +147,7 @@ After starting the system locally:
 - `progress-service/` Progress Processor Service (write side)
 - `progress-api/` Progress Query Service (read side, FastAPI)
 - `docker-compose.yml` Docker Compose configuration
+
 
 
 
