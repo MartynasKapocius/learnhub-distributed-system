@@ -2,13 +2,9 @@
 
 ## Watch the System Demo Below
 
-<p align="center">
-  <a href="https://youtu.be/BIWgT2HYaFU">
-    <img src="https://img.youtube.com/vi/BIWgT2HYaFU/maxresdefault.jpg" width="900">
-  </a>
-</p>
+[![LearnHub Demo](https://img.youtube.com/vi/BIWgT2HYaFU/maxresdefault.jpg)](https://youtu.be/BIWgT2HYaFU)
 
-<p align="center"><b>▶ Click to watch the full architecture and feature walkthrough</b></p>
+> Click the thumbnail above to watch the full distributed system walkthrough.
 
 ---
 
