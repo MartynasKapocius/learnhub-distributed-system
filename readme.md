@@ -8,15 +8,8 @@
 
 LearnHub is a distributed online learning platform that supports user management, course delivery, quizzes, and learning progress tracking. The project was developed with a primary focus on architectural reasoning, trade-offs, and distributed systems principles rather than feature completeness.
 
-## Live Deployment
 
-The full system has been deployed to a public server and is accessible via a single entry point.
-
-- Live Application: https://learnhubpro.duckdns.org/
-
-This application is available via a single public endpoint, with NGINX handling request routing to the underlying services.
-
-## Application Walkthrough
+## Feature Overview
 
 ### Authentication
 
@@ -155,5 +148,6 @@ After starting the system locally:
 
 ## Architectural Documentation
 The repository includes architectural documentation covering system diagrams, design decisions, and trade-off analysis.
+
 
 
