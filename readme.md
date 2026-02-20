@@ -1,6 +1,12 @@
-# LearnHub (COMP41720 Group Project)
+# LearnHub – Distributed Microservices Learning Platform
 
-LearnHub is a distributed online learning platform that supports user management, course delivery, quizzes, and learning progress tracking. The project was developed for the COMP41720 Group Project with a primary focus on architectural reasoning, trade-offs, and distributed systems principles rather than feature completeness.
+## Application Walkthrough
+
+[![Watch LearnHub Demo](https://img.youtube.com/vi/BIWgT2HYaFU/hqdefault.jpg)](https://youtu.be/BIWgT2HYaFU)
+
+---
+
+LearnHub is a distributed online learning platform that supports user management, course delivery, quizzes, and learning progress tracking. The project was developed with a primary focus on architectural reasoning, trade-offs, and distributed systems principles rather than feature completeness.
 
 ## Live Deployment
 
@@ -10,27 +16,36 @@ The full system has been deployed to a public server and is accessible via a sin
 
 This application is available via a single public endpoint, with NGINX handling request routing to the underlying services.
 
-### Quick Functional Check (Live)
+## Application Walkthrough
 
-1. Open the live link.
+### Authentication
 
-2. Register a new user and log in.
-   
-   ![](images/register-login.png)
+Users can register and log in using JWT-based authentication.
 
-3. Browse available courses.
-   
-   ![](images/browse-courses.png)
+![](images/register-login.png)
 
-4. Start and submit a quiz.
-   
-   ![](images/subscribe.png)
-   
-   ![](images/start_a_quiz.png)
+### Course Catalogue
 
-5. View learning progress and quiz results.
+Users can browse available courses and subscribe to begin learning.
 
-   ![](images/progress.png)Note: progress updates may appear with a short delay due to asynchronous processing.
+![](images/browse-courses.png)
+
+### Quiz System
+
+Each course includes quizzes. Users can start and submit quizzes, with results processed by the distributed backend services.
+
+![](images/subscribe.png)
+
+![](images/start_a_quiz.png)
+
+### Learning Progress Tracking
+
+Learning progress and quiz results are aggregated and exposed through a dedicated read-side API.
+
+![](images/progress.png)
+
+> Progress updates are processed asynchronously via RabbitMQ and may appear with a short delay.
+
 
 ## System Architecture
 
@@ -138,5 +153,7 @@ After starting the system locally:
 
 ## Report
 
-The architectural design report, including system diagrams, trade-off analysis, and Architectural Decision Records (ADRs), is included as part of the project submission.
+## Architectural Documentation
+The repository includes architectural documentation covering system diagrams, design decisions, and trade-off analysis.
+
 
