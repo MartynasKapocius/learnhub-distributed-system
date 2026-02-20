@@ -142,12 +142,5 @@ After starting the system locally:
 - `progress-api/` Progress Query Service (read side, FastAPI)
 - `docker-compose.yml` Docker Compose configuration
 
-# 
-
-## Report
-
-## Architectural Documentation
-The repository includes architectural documentation covering system diagrams, design decisions, and trade-off analysis.
-
 
 
